@@ -11,7 +11,7 @@ class DMAPulses(EnvExperiment):
     @kernel
     def record(self):
         with self.core_dma.record("pulses"):
-            for i in range(100):
+            for i in range(10):
                 self.ttl7.pulse(1/(2*frequency) * us)
                 delay(1/(2*frequency) * us)
 
@@ -21,6 +21,5 @@ class DMAPulses(EnvExperiment):
         self.record()
         pulses_handle = self.core_dma.get_handle("pulses")
         self.core.break_realtime()
-        for i in range(100000):
-            #self.core.break_realtime()
+        for i in range(1000000):
             self.core_dma.playback_handle(pulses_handle)

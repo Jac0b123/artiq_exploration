@@ -19,7 +19,7 @@ class Tutorial(EnvExperiment):
             for voltage in ramp_voltages:
                 self.zotino.write_dac(0, voltage)
                 self.zotino.load()
-                delay(10/rate * ms)
+                delay((10/rate-0.0008) * ms)
 
     @kernel
     def run(self):
@@ -29,5 +29,4 @@ class Tutorial(EnvExperiment):
         self.core.break_realtime()
         self.zotino.init()
         self.core.break_realtime()
-
         self.core_dma.playback_handle(pulses_handle)
