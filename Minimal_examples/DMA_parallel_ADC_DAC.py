@@ -1,10 +1,11 @@
+import sys
 from artiq.experiment import *
 import numpy as np
 from matplotlib import pyplot as plt
 
 
-frequency = 6e3  # Sine wave frequency
-points = 20  # points per period
+frequency = 2e3  # Sine wave frequency
+points = 60  # points per period
 total_duration = 0.01  # seconds per period
 
 Nsamples = int(total_duration * frequency * points)
@@ -73,17 +74,23 @@ class Tutorial(EnvExperiment):
         self.core.break_realtime()
 
         # Simultaneously emit Zotino pulses and acquire with digitizer
-        for j in range(int(Nperiods)):
-            with parallel:
-                self.core_dma.playback_handle(pulses_handle)
-                with sequential:
-                    for k in range(points):
-                        self.sampler0.sample_mu(self.samples[j * points + k])
-                        # Subtract 2.5 us, i.e. the sample instruction duraction
-                        delay(sample_rate / acquisition_rate_scale * s - 2.5*us)
-                    # We need a small delay here, probably a combination of
-                    # the sampler needing a small delay and exiting a for loop
-                    delay(sample_rate / acquisition_rate_scale * s*3)
+        k = 0
+        try:
+            for j in range(int(Nperiods)):
+                with parallel:
+                    self.core_dma.playback_handle(pulses_handle)
+                    with sequential:
+                        delay(sample_rate / acquisition_rate_scale * s*3)
+                        for k in range(points):
+                            delay(sample_rate / acquisition_rate_scale * s - 2.5*us)
+                            self.sampler0.sample_mu(self.samples[j * points + k])
+                            # Subtract 2.5 us, i.e. the sample instruction duraction
+                        # We need a small delay here, probably a combination of
+                        # the sampler needing a small delay and exiting a for loop
+                        delay(1*ms)
+        except RTIOUnderflow:
+            print('j =', j, 'k =', k)
+            raise
 
         # Plot all sampler channels
         self.plot(self.samples)
