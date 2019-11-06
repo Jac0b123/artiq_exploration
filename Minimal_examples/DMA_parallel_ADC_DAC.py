@@ -3,19 +3,19 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-frequency = 1e2  # Sine wave frequency
-points = 50  # points per period
-total_duration = 0.1  # seconds per period
+frequency = 6e3  # Sine wave frequency
+points = 20  # points per period
+total_duration = 0.01  # seconds per period
 
 Nsamples = int(total_duration * frequency * points)
-sample_rate = 1 / frequency / points
+sample_rate = 1 / (frequency * points)
 Nperiods = total_duration * frequency
 
 acquisition_rate_scale = 1
 Nsamples_acquisition = int(Nsamples * acquisition_rate_scale)
 
 print('Nsamples:', Nsamples)
-print('sample_rate:', sample_rate, 's')
+print('sample_rate:', 1 / sample_rate / 1e3, 'kHz')
 print('Nsamples_acquisition', Nsamples_acquisition)
 print('Nperiods', Nperiods)
 
@@ -47,41 +47,43 @@ class Tutorial(EnvExperiment):
     def record(self):
         with self.core_dma.record("pulse0"):
             for k in range(points):
-                # with parallel:
-                #     with sequential:
                 self.zotino0.write_dac(0, self.voltages[k])
                 self.zotino0.write_dac(1, self.voltages[k])
                 self.zotino0.load()
-                    # with sequential:
-                    #     self.sampler0.sample_mu(self.samples[k])
-                delay(sample_rate * s)
+
+                # Subtract 800 ns, i.e. the zotino load duration
+                delay(sample_rate * s - 0.8*us)
 
     @kernel
     def run(self):
+        # Initialize instruments
         self.core.reset()
         self.core.break_realtime()
         self.sampler0.init()
-        delay(5 * ms)
+        self.core.break_realtime()
+        self.zotino0.init()
+        delay(5*ms)
         for i in range(8):
             self.sampler0.set_gain_mu(i,0)  # Set the gain of each channel to 1
-            delay(1 * ms)
+            delay(1*us)
 
+        # Load Zotino pulses
         self.record()
         pulses_handle = self.core_dma.get_handle("pulse0")
         self.core.break_realtime()
-        self.zotino0.init()
-        self.core.break_realtime()
 
-        k = 0
+        # Simultaneously emit Zotino pulses and acquire with digitizer
         for j in range(int(Nperiods)):
             with parallel:
                 self.core_dma.playback_handle(pulses_handle)
                 with sequential:
                     for k in range(points):
-                        idx = j * points + k
-                        # idx = j
-                        delay(sample_rate / acquisition_rate_scale * s)
-                        self.sampler0.sample_mu(self.samples[idx])
+                        self.sampler0.sample_mu(self.samples[j * points + k])
+                        # Subtract 2.5 us, i.e. the sample instruction duraction
+                        delay(sample_rate / acquisition_rate_scale * s - 2.5*us)
+                    # We need a small delay here, probably a combination of
+                    # the sampler needing a small delay and exiting a for loop
+                    delay(sample_rate / acquisition_rate_scale * s*3)
 
-        print(k)
+        # Plot all sampler channels
         self.plot(self.samples)
