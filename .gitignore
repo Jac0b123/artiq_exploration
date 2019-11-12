@@ -1,2 +1,5 @@
 __pycache__
 *.vcd
+data.txt
+Minimal_examples/data.txt
+*.pyon

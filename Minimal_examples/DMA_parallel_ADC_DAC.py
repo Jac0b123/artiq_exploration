@@ -4,8 +4,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-frequency = 2e3  # Sine wave frequency
-points = 60  # points per period
+frequency = 2e2  # Sine wave frequency
+points = 50  # points per period
 total_duration = 0.01  # seconds per period
 
 Nsamples = int(total_duration * frequency * points)
@@ -41,19 +41,27 @@ class Tutorial(EnvExperiment):
 
         # This list holds all the sampled data for 2 channels, channel 6 and channel 7
         self.samples = [[int(0)] * 2 for k in range(Nsamples_acquisition)]
-        self.voltages = np.sin(np.linspace(0, 2*np.pi, points))
+        self.sinevoltages = np.sin(np.linspace(0, 2*np.pi, points))
+        self.rampvoltages = [k/points for k in range(points)]
 
 
     @kernel
     def record(self):
         with self.core_dma.record("pulse0"):
             for k in range(points):
-                self.zotino0.write_dac(0, self.voltages[k])
-                self.zotino0.write_dac(1, self.voltages[k])
+                self.zotino0.write_dac(0, self.sinevoltages[k])
+                self.zotino0.write_dac(1, self.sinevoltages[k])
                 self.zotino0.load()
 
                 # Subtract 800 ns, i.e. the zotino load duration
                 delay(sample_rate * s - 0.8*us)
+
+        with self.core_dma.record("pulse1"):
+            for k in range(points):
+                self.zotino0.write_dac(2, self.rampvoltages[k])
+                self.zotino0.load()
+                # Subtract 800 ns, i.e. the zotino load duration
+                delay(sample_rate * s - 0.8 * us)
 
     @kernel
     def run(self):
@@ -70,27 +78,38 @@ class Tutorial(EnvExperiment):
 
         # Load Zotino pulses
         self.record()
-        pulses_handle = self.core_dma.get_handle("pulse0")
+        pulses_handle0 = self.core_dma.get_handle("pulse0")
+        pulses_handle1 = self.core_dma.get_handle("pulse1")
         self.core.break_realtime()
 
         # Simultaneously emit Zotino pulses and acquire with digitizer
         k = 0
+        t0 = t1 = t2 = t3 = 0
         try:
             for j in range(int(Nperiods)):
                 with parallel:
-                    self.core_dma.playback_handle(pulses_handle)
+                    t0 = now_mu()
+                    #delay(0.7*ms)
+                    self.core_dma.playback_handle(pulses_handle0)
+                    t1 = now_mu()
+                    #self.core_dma.playback_handle(pulses_handle1)
                     with sequential:
+                        t2 = now_mu()
                         delay(sample_rate / acquisition_rate_scale * s*3)
+                        #t2 = now_mu()
                         for k in range(points):
                             delay(sample_rate / acquisition_rate_scale * s - 2.5*us)
                             self.sampler0.sample_mu(self.samples[j * points + k])
+                        t3 = now_mu()
                             # Subtract 2.5 us, i.e. the sample instruction duraction
                         # We need a small delay here, probably a combination of
                         # the sampler needing a small delay and exiting a for loop
-                        delay(1*ms)
+                        delay(0.54*ms)
         except RTIOUnderflow:
             print('j =', j, 'k =', k)
+            print(self.core.mu_to_seconds(t1 - t0) * 1000,self.core.mu_to_seconds(t3 - t2) * 1000)
             raise
 
+        print(self.core.mu_to_seconds(t1 - t0)*1000, self.core.mu_to_seconds(t3 - t2)*1000)
         # Plot all sampler channels
         self.plot(self.samples)
