@@ -6,7 +6,7 @@ error is always raised.
 It seems the number of DMA pulses has a maximum, and it isn't high...
 """
 
-points = 80  # Number of points for the zotino ramping pulse
+points = 70 # Number of points for the zotino ramping pulse
 # Choosing ~90 points or higher causes an RTIOunderflow error.
 
 import sys
@@ -22,13 +22,10 @@ class Tutorial(EnvExperiment):
         self.zotino = self.zotino0
         self.setattr_device("ttl6")
 
-    @rpc(flags={"async"})
-    def print(self, msg, *args):
-        print(msg.format(*args))
-
     @kernel
     def record(self):
         with self.core_dma.record("pulse0"):
+            #at_mu(now_mu() + int(10*1e9))        # push the timeline cursor into the future
             for k in range(points):
                 self.zotino.write_dac(0, float(k / points))  # ramping pulse
                 #self.zotino.write_dac(1, float(k / points))
@@ -43,18 +40,35 @@ class Tutorial(EnvExperiment):
         self.zotino0.init()
         delay(5*ms)
 
-
         # Load Zotino pulses
         self.record()
         pulses_handle0 = self.core_dma.get_handle("pulse0")
         self.core.break_realtime()
+        t0 = now_mu()   # time before entering parallel statement
+        T0 = self.core.get_rtio_counter_mu()
+        t1 = 0
+        T1 = 0
+        try:
+            with parallel:
+                self.core_dma.playback_handle(pulses_handle0)
+                #at_mu(now_mu() + int(2*1e9))
+                t1 = now_mu()
+                T1 = self.core.get_rtio_counter_mu()
+                with sequential:
+                    #self.core.break_realtime()
+                    t2 = now_mu()
+                    for k in range(100):
+                        delay(10*ms)
+                        self.ttl6.pulse(0.1*ms)
 
-        with parallel:
-            with sequential:
-                #self.core.break_realtime()
-                for k in range(100):
-                    delay(10*ms)
-                    self.ttl6.pulse(0.1*ms)
+            print("timeline cursor = ", self.core.mu_to_seconds(t1 - t0))
+            print("wall clock = ", self.core.mu_to_seconds(T1-T0))
+            print("timeline cursor - wall clock = ",self.core.mu_to_seconds(t1 - T1))
+        except RTIOUnderflow:
+            # print the timeline cursor and also the wall clock
 
-            with sequential:
-                self.playback
+            print("timeline cursor = ", self.core.mu_to_seconds(t1 - t0))
+            print("wall clock = ", self.core.mu_to_seconds(T1 - T0))
+            print("timeline cursor - wall clock = ", self.core.mu_to_seconds(t1 - T1))
+
+
