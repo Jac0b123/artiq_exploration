@@ -10,7 +10,7 @@ Note that the increased duration depends on the delays set in the DMA pulse.
 It seems the number of instructions in a DMA pulse has a maximum, and it isn't high...
 """
 
-points = 85 # Number of points for the zotino ramping pulse
+points = 86 # Number of points for the zotino ramping pulse
 # Choosing 86 points or higher causes an RTIOunderflow error.
 
 from artiq.experiment import *
@@ -28,7 +28,7 @@ class Tutorial(EnvExperiment):
             for k in range(points):
                 self.zotino.write_dac(0, float(k / points))  # ramping pulse
                 self.zotino.load()
-                delay(10*ms)
+                delay(1*ms)
     @kernel
     def run(self):
         # Initialize instruments
@@ -54,4 +54,3 @@ class Tutorial(EnvExperiment):
         print("Timeline cursor increased by", self.core.mu_to_seconds(t1 - t0), "seconds")
         print("RTIO counter increased by", self.core.mu_to_seconds(T1 - T0), "seconds")
         print("timeline cursor - RTIO counter = ", self.core.mu_to_seconds(t1 - T1))
-
