@@ -12,9 +12,9 @@ from matplotlib import pyplot as plt
 
 
 repetitions = 100
-Nsamples = int(10e3)
+Nsamples = int(1e3)
 channel_list = [2, 4, 6, 8]
-sample_rate_list = [k for k in range(int(50e3), int(140e3), int(5e3))]
+sample_rate_list = [k for k in range(int(50e3), int(150e3), int(5e3))]
 
 print('Repeating sequence', repetitions, 'times')
 print('Acquiring a total', Nsamples, 'samples')

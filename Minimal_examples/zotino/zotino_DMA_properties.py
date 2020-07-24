@@ -15,14 +15,11 @@ class Tutorial(EnvExperiment):
             for i in range(100):
                 self.zotino.write_dac(0, float(1))
                 self.zotino.load()
-                #delay((1/(2*frequency) - 0.0008) * ms)
-                #delay(1/(2*frequency) * ms)
-                delay(10*us)
+                delay((1/(2*frequency) - 0.0008) * ms)
+
                 self.zotino.write_dac(0, float(0))
                 self.zotino.load()
-                #delay((1/(2*frequency) - 0.0008) * ms)
-                #delay(1 / (2 * frequency) * ms)
-                delay(10*us)
+                delay((1/(2*frequency) - 0.0008) * ms)
 
     @kernel
     def run(self):

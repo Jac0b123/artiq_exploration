@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 # frequency = float(input("Enter sinusoid frequency: "))
 
 sample_rate = 10e3
-frequency = 1e2
-points = 50
+frequency = .1e2
+points = 200
 total_duration = 2  # seconds
 Nsamples = int(total_duration * frequency * points)
 voltages = np.sin(np.linspace(0, 2*np.pi, points))
@@ -62,18 +62,8 @@ class sampler(EnvExperiment):
 
 
         self.export_data(samples)
-        #delay(1*ms)
-        # # Convert data using code in adc_mu_to_volt
-        # scale = 20. / (1 << 16)
-        #data = [float(sample[0]) for sample in samples]
-        # # data_scaled = np.array(data) * scale
-        #
-        # # for i in range(len(samples)):
-        # delay(1*ms)
-        #
         self.plot(samples)
 
-        # self.export_data(data_scaled)
 
 
 

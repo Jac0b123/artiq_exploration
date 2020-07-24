@@ -42,22 +42,22 @@ class Tutorial(EnvExperiment):
 
         delay(5*ms)
 
-        for i in range(300):
-            with parallel:
-                for j in range(5):
-                    self.zotino.write_dac(0,1)
-                    self.zotino.write_dac(1,0)
-                    self.zotino.load()
-                    delay(1*ms)
-                    self.zotino.write_dac(0,0)
-                    self.zotino.write_dac(1,1)
-                    self.zotino.load()
-                    delay(1*ms)
+        #for i in range(300):
+        #with parallel:
+            for j in range(5):
+                self.zotino.write_dac(0,1)
+                self.zotino.write_dac(1,0)
+                self.zotino.load()
+                delay(1*ms)
+                self.zotino.write_dac(0,0)
+                self.zotino.write_dac(1,1)
+                self.zotino.load()
+                delay(1*ms)
 
-                with sequential:
-                    self.core.break_realtime()
-                    for j in range(5):
-                        self.ttl7.pulse(1*ms)
-                        self.sampler0.sample_mu([int(0), int(0)])
-                        delay(1*ms)
+            #with sequential:
+                self.core.break_realtime()
+                for j in range(5):
+                    self.ttl7.pulse(1*ms)
+                    self.sampler0.sample_mu([int(0), int(0)])
+                    delay(1*ms)
 

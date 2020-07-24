@@ -26,13 +26,13 @@ class Tutorial(EnvExperiment):
         self.core.break_realtime()
         self.zotino.init()
         delay(5*ms)
-        for i in range(3000):
-            self.zotino.write_dac(0, 0)
-            self.zotino.write_dac(1, 0)
-            self.zotino.load()
-            delay(0.4*ms)
 
-            self.zotino.write_dac(0, 1)
-            self.zotino.write_dac(1, 1)
-            self.zotino.load()
-            delay(0.4*ms)
+        self.zotino.write_dac(0, 1)
+        # for i in range(30000):
+        #     self.zotino.write_dac(0, 0)
+        #     self.zotino.load()
+        #     delay(0.1*ms)
+        #
+        #     self.zotino.write_dac(0, 1)
+        #     self.zotino.load()
+        #     delay(0.1*ms)

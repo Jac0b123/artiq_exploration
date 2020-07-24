@@ -26,7 +26,7 @@ sine_channel = -1  # Sinusoidal input channel in sampler
 
 
 def calculate_sample_interval(sample_rate) -> TFloat:
-    return float(1 / sample_rate) * s  - 2.6 * us  - 0.01255 / sample_rate * s
+    return float(1 / sample_rate) * s  - 2.6 * us - 0.025 / sample_rate * s
 
 
 def find_initial_sine_fit_parameters(trace, sample_interval):

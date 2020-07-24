@@ -46,12 +46,13 @@ class sampler(EnvExperiment):
         try:
             for k in range(Nsamples):
                 self.sampler0.sample_mu(samples[k])
-                delay(float(1 / sample_rate) * s - 8.9*us)
+                delay(float(1 / sample_rate) * s)
         except RTIOUnderflow:
             print('Failed at k =', k)
             raise
 
         self.plot(samples)
+        self.export_data(samples)
 
 
         # self.export_data(self.samples)

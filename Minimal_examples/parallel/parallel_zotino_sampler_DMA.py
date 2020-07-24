@@ -4,9 +4,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-frequency = 2e2  # Sine wave frequency
-points = 50  # points per period
-total_duration = 0.01  # seconds per period
+frequency = 1  # Sine wave frequency
+points = 50 # points per period
+total_duration = 1  # seconds per period
 
 Nsamples = int(total_duration * frequency * points)
 sample_rate = 1 / (frequency * points)
@@ -83,33 +83,27 @@ class Tutorial(EnvExperiment):
         self.core.break_realtime()
 
         # Simultaneously emit Zotino pulses and acquire with digitizer
-        k = 0
-        t0 = t1 = t2 = t3 = 0
+        t1 = T1 = k = 0
+        T0 = self.core.get_rtio_counter_mu()
+        t0 = now_mu()
         try:
             for j in range(int(Nperiods)):
                 with parallel:
-                    t0 = now_mu()
-                    #delay(0.7*ms)
-                    self.core_dma.playback_handle(pulses_handle0)
-                    t1 = now_mu()
-                    #self.core_dma.playback_handle(pulses_handle1)
                     with sequential:
-                        t2 = now_mu()
-                        delay(sample_rate / acquisition_rate_scale * s*3)
-                        #t2 = now_mu()
+                        self.core_dma.playback_handle(pulses_handle0)
+                        T1 = self.core.get_rtio_counter_mu()
+                        t1 = now_mu()
+                    with sequential:
                         for k in range(points):
                             delay(sample_rate / acquisition_rate_scale * s - 2.5*us)
                             self.sampler0.sample_mu(self.samples[j * points + k])
-                        t3 = now_mu()
-                            # Subtract 2.5 us, i.e. the sample instruction duraction
-                        # We need a small delay here, probably a combination of
-                        # the sampler needing a small delay and exiting a for loop
-                        delay(0.54*ms)
+
         except RTIOUnderflow:
             print('j =', j, 'k =', k)
-            print(self.core.mu_to_seconds(t1 - t0) * 1000,self.core.mu_to_seconds(t3 - t2) * 1000)
+            print("RTIO clock advanced by ", self.core.mu_to_seconds(T1 - T0))
+            print("timeline cursor advanced by ", self.core.mu_to_seconds(t1 - t0))
             raise
 
-        print(self.core.mu_to_seconds(t1 - t0)*1000, self.core.mu_to_seconds(t3 - t2)*1000)
-        # Plot all sampler channels
+        print("RTIO clock advanced by ",self.core.mu_to_seconds(T1 - T0))
+        print("timeline cursor advanced by ",self.core.mu_to_seconds(t1 - t0))
         self.plot(self.samples)
